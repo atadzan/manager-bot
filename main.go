@@ -18,6 +18,28 @@ func main() {
 		panic(err)
 	}
 
+	commands := tgbotapi.NewSetMyCommands([]tgbotapi.BotCommand{
+		tgbotapi.BotCommand{
+			Command:     "/help",
+			Description: "Help info",
+		},
+		tgbotapi.BotCommand{
+			Command:     "/list_proxies",
+			Description: "List proxies",
+		},
+		tgbotapi.BotCommand{
+			Command:     "/check_proxies",
+			Description: "Check proxies",
+		},
+		tgbotapi.BotCommand{
+			Command:     "/update_passwords",
+			Description: "Update passwords",
+		},
+	}...)
+
+	if _, err = bot.Request(commands); err != nil {
+		log.Println(err)
+	}
 	bot.Debug = true
 
 	eventProcessor := processor.New(appCfg.Proxies)

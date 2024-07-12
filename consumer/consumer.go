@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/atadzan/bv-manager-bot/messages"
@@ -38,28 +39,35 @@ func (c *consumer) Start() {
 		)
 		if update.Message == nil {
 			continue
-		} else {
-			switch update.Message.Text {
-			case messages.CMDHelp:
-				msg = messages.Help
-			case messages.CMDListProxies:
-				msg = c.processor.ListProxies()
-			case messages.CMDCheckProxies:
-				msg = c.processor.CheckProxies()
-			case messages.CMDUpdatePasswords:
-				msg = messages.UpdatePasswords
-			default:
-				msg = messages.UnknownCMD
-			}
+		}
 
-			tgMsg := tgbotapi.NewMessage(update.Message.Chat.ID, msg)
-
-			tgMsg.ReplyToMessageID = update.Message.MessageID
+		if !update.Message.IsCommand() {
+			tgMsg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s is not command", update.Message.Text))
 			if _, err = c.bot.Send(tgMsg); err != nil {
 				log.Println(err)
 			}
+			continue
 		}
 
+		switch update.Message.Command() {
+		case messages.CMDHelp, messages.CMDStart:
+			msg = messages.Help
+		case messages.CMDListProxies:
+			msg = c.processor.ListProxies()
+		case messages.CMDCheckProxies:
+			msg = c.processor.CheckProxies()
+		case messages.CMDUpdatePasswords:
+			msg = messages.UpdatePasswords
+		default:
+			msg = messages.UnknownCMD
+		}
+
+		tgMsg := tgbotapi.NewMessage(update.Message.Chat.ID, msg)
+
+		if _, err = c.bot.Send(tgMsg); err != nil {
+			log.Println(err)
+		}
 	}
+
 	return
 }
