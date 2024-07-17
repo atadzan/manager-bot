@@ -33,41 +33,43 @@ func (c *consumer) Start() {
 	updates := c.bot.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
-		var (
-			msg string
-			err error
-		)
+		var err error
 		if update.Message == nil {
 			continue
 		}
 
-		if !update.Message.IsCommand() {
-			tgMsg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s is not command", update.Message.Text))
-			if _, err = c.bot.Send(tgMsg); err != nil {
-				log.Println(err)
+		var tgMsg = tgbotapi.NewMessage(update.Message.Chat.ID, "")
+
+		if update.Message.IsCommand() {
+			switch update.Message.Command() {
+			case messages.CMDHelp, messages.CMDStart:
+				tgMsg.Text = messages.Help
+			case messages.CMDListProxies:
+				tgMsg.Text = c.processor.ListProxies()
+			case messages.CMDCheckProxies:
+				tgMsg.Text = c.processor.CheckProxies()
+			case messages.UpdateProxies:
+				tgMsg.Text = messages.UpdateProxiesMsg
+				tgMsg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
+			case messages.CMDUpdatePasswords:
+				tgMsg.Text = messages.UpdatePasswords
+			case messages.CMDClearProxyList:
+				tgMsg.Text = c.processor.ClearProxyList()
+			default:
+				tgMsg.Text = messages.UnknownCMD
 			}
-			continue
-		}
 
-		switch update.Message.Command() {
-		case messages.CMDHelp, messages.CMDStart:
-			msg = messages.Help
-		case messages.CMDListProxies:
-			msg = c.processor.ListProxies()
-		case messages.CMDCheckProxies:
-			msg = c.processor.CheckProxies()
-		case messages.CMDUpdatePasswords:
-			msg = messages.UpdatePasswords
-		default:
-			msg = messages.UnknownCMD
-		}
+		} else if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.Text == messages.UpdateProxiesMsg {
+			tgMsg.Text = c.processor.UpdateProxies(update.Message.Text)
 
-		tgMsg := tgbotapi.NewMessage(update.Message.Chat.ID, msg)
+		} else {
+			tgMsg.Text = fmt.Sprintf("%s is not command", update.Message.Text)
+		}
 
 		if _, err = c.bot.Send(tgMsg); err != nil {
 			log.Println(err)
 		}
-	}
 
+	}
 	return
 }

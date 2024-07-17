@@ -1,27 +1,35 @@
 package processor
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os/exec"
 	"strings"
 
-	"github.com/atadzan/bv-manager-bot/config"
+	"github.com/atadzan/bv-manager-bot/messages"
 )
 
-const successResponseSample = "[info] Available formats for a9LDPn-MO4I:"
+const (
+	successResponseSample = "[info] Available formats for a9LDPn-MO4I:"
+	storageFilePath       = "proxies.csv"
+)
 
 type Processor interface {
 	ListProxies() (msg string)
 	CheckProxies() (msg string)
+	UpdateProxies(inputText string) (msg string)
+	ClearProxyList() (msg string)
 }
 
 type eventProcessor struct {
-	proxies []config.Proxy
+	proxies []messages.Proxy
 }
 
-func New(proxies []config.Proxy) Processor {
-	return &eventProcessor{proxies: proxies}
+func New() Processor {
+	return &eventProcessor{
+		proxies: readFromFile(),
+	}
 }
 
 func (p *eventProcessor) ListProxies() (msg string) {
@@ -59,4 +67,24 @@ func (p *eventProcessor) CheckProxies() (msg string) {
 		msg = fmt.Sprintf("We don't have any active proxies 😢.")
 	}
 	return
+}
+
+func (p *eventProcessor) UpdateProxies(inputText string) (msg string) {
+	var proxies []messages.Proxy
+	if err := json.Unmarshal([]byte(inputText), &proxies); err != nil {
+		msg = fmt.Sprintf("Can't unmarshal input message. Input message: %s. Error: %v", inputText, err)
+		return
+	}
+	p.proxies = append(p.proxies, proxies...)
+
+	if err := saveToFile(p.proxies); err != nil {
+		log.Printf("Can't update file containing proxy list. Error: %v\n", err)
+	}
+	return messages.ProxiesSuccessfullyUpdated
+}
+
+func (p *eventProcessor) ClearProxyList() (msg string) {
+	p.proxies = []messages.Proxy{}
+	removeStorageFile()
+	return messages.ProxyListSuccessfullyCleared
 }

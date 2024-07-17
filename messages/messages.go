@@ -5,7 +5,9 @@ const (
 	CMDHelp            = "help"
 	CMDListProxies     = "list_proxies"
 	CMDCheckProxies    = "check_proxies"
+	UpdateProxies      = "update_proxies"
 	CMDUpdatePasswords = "update_passwords"
+	CMDClearProxyList  = "clear_list"
 )
 
 const (
@@ -19,6 +21,14 @@ I'm BeletVideo's manager bot. I can do several jobs.
 You can access commands in the lower left corner
 
 Good luck 👍`
-	UpdatePasswords = "Unfortunately, this functionality on development process"
-	UnknownCMD      = "Unknown command 🤔"
+	UpdatePasswords              = "Unfortunately, this functionality on development process 😢"
+	UpdateProxiesMsg             = "Please provide proxies ⬇️"
+	UnknownCMD                   = "Unknown command 🤔"
+	ProxiesSuccessfullyUpdated   = "Proxies successfully updated ✅"
+	ProxyListSuccessfullyCleared = "The proxy list has been successfully cleared ✅"
 )
+
+type Proxy struct {
+	URL         string `json:"URL"`
+	CountryCode string `json:"countryCode"`
+}
