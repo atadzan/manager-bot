@@ -34,10 +34,6 @@ func main() {
 			Description: "Update proxies",
 		},
 		{
-			Command:     "/update_proxies",
-			Description: "Update proxies",
-		},
-		{
 			Command:     "/clear_list",
 			Description: "Clear proxy list",
 		},

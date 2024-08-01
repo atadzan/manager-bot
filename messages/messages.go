@@ -16,6 +16,8 @@ I'm BeletVideo's manager bot. I can do several jobs.
 
 1. Check working socks5h proxies - /check_proxies
 2. List socks5h proxies - /list_proxies
+3. Update proxies - /update_proxies
+4. Clear proxy list - /clear_list
 3. Update service passwords - /update_passwords
 
 You can access commands in the lower left corner
