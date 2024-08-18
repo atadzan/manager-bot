@@ -6,6 +6,7 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"github.com/atadzan/bv-manager-bot/messages"
 )
@@ -50,17 +51,28 @@ func (p *eventProcessor) CheckProxies() (msg string) {
 		msg = fmt.Sprintf("Proxy list is empty")
 		return
 	}
+	var wg = &sync.WaitGroup{}
+	var mx = &sync.Mutex{}
 	for _, proxy := range p.proxies {
-		cmd := exec.Command("yt-dlp", "-F", fmt.Sprint("https://www.youtube.com/watch?v=a9LDPn-MO4I"), "--proxy", proxy.URL)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			log.Printf("Error while executign command: %s. Error: %v. Output: %s", cmd.String(), err, string(output))
-			continue
-		}
-		if strings.Contains(string(output), successResponseSample) {
-			activeProxies = append(activeProxies, fmt.Sprintf("%s. Region: %s", proxy.URL, proxy.CountryCode))
-		}
+		wg.Add(1)
+		go func() {
+			cmd := exec.Command("yt-dlp", "-F", fmt.Sprint("https://www.youtube.com/watch?v=a9LDPn-MO4I"), "--proxy", proxy.URL, "--socket-timeout", "1")
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				log.Printf("Error while executign command: %s. Error: %v. Output: %s", cmd.String(), err, string(output))
+			}
+			if strings.Contains(string(output), successResponseSample) {
+				mx.Lock()
+				activeProxies = append(activeProxies, fmt.Sprintf("%s. Region: %s", proxy.URL, proxy.CountryCode))
+				mx.Unlock()
+			}
+			defer func() {
+				wg.Done()
+			}()
+		}()
 	}
+
+	wg.Wait()
 	if len(activeProxies) != 0 {
 		msg = fmt.Sprintf("We have %d active proxies from %d.\n%s", len(activeProxies), len(p.proxies), strings.Join(activeProxies, "\n"))
 	} else {
